@@ -61,6 +61,26 @@ export default async function handler(req, res) {
           SOURCE: 'coming-soon-founder-pass',
         },
       });
+
+      // Best-effort: notify the founder inbox about every claim.
+      // Domain campuscode.co.in is Brevo-authenticated, so this lands in the inbox.
+      // Wrapped so a mail failure NEVER breaks a visitor's claim.
+      try {
+        await brevo('/smtp/email', 'POST', {
+          sender: { name: 'CampusCode', email: 'hello@campuscode.co.in' },
+          to: [{ email: 'hello@campuscode.co.in', name: 'CampusCode' }],
+          subject: 'New Founder Pass claimed — #' + String(passNumber || '?').padStart(4, '0'),
+          textContent:
+            'A new Founder Pass was just claimed on campuscode.co.in\n\n' +
+            'Claimer email: ' + email + '\n' +
+            'Pass number: #' + String(passNumber || '?') + '\n' +
+            'Time: ' + new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) + ' IST\n\n' +
+            'The contact is also saved in Brevo → "CampusCode Launch List".',
+        });
+      } catch (mailErr) {
+        console.error('notify mail failed:', mailErr.message);
+      }
+
       const info = await brevo('/contacts/lists/' + id);
       return res.status(200).json({ ok: true, count: info.totalSubscribers || 0 });
     }
