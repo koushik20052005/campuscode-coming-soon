@@ -62,14 +62,16 @@ export default async function handler(req, res) {
         },
       });
 
-      // Best-effort: notify the founder inbox about every claim.
-      // Domain campuscode.co.in is Brevo-authenticated, so this lands in the inbox.
+      // Best-effort: notify the founder about every claim.
+      // Sent DIRECTLY to his Gmail — the hello@ address forwards there anyway,
+      // and skipping the ImprovMX hop avoids its soft-bounce deferrals of
+      // shared-IP senders. From stays hello@campuscode.co.in (authenticated).
       // Wrapped so a mail failure NEVER breaks a visitor's claim.
       let mailStatus = 'sent';
       try {
         await brevo('/smtp/email', 'POST', {
           sender: { name: 'CampusCode', email: 'hello@campuscode.co.in' },
-          to: [{ email: 'hello@campuscode.co.in', name: 'CampusCode' }],
+          to: [{ email: 'koushikthatipelli@gmail.com', name: 'Koushik' }],
           subject: 'New Founder Pass claimed — #' + String(passNumber || '?').padStart(4, '0'),
           textContent:
             'A new Founder Pass was just claimed on campuscode.co.in\n\n' +
