@@ -65,6 +65,7 @@ export default async function handler(req, res) {
       // Best-effort: notify the founder inbox about every claim.
       // Domain campuscode.co.in is Brevo-authenticated, so this lands in the inbox.
       // Wrapped so a mail failure NEVER breaks a visitor's claim.
+      let mailStatus = 'sent';
       try {
         await brevo('/smtp/email', 'POST', {
           sender: { name: 'CampusCode', email: 'hello@campuscode.co.in' },
@@ -78,11 +79,12 @@ export default async function handler(req, res) {
             'The contact is also saved in Brevo → "CampusCode Launch List".',
         });
       } catch (mailErr) {
+        mailStatus = mailErr.message;
         console.error('notify mail failed:', mailErr.message);
       }
 
       const info = await brevo('/contacts/lists/' + id);
-      return res.status(200).json({ ok: true, count: info.totalSubscribers || 0 });
+      return res.status(200).json({ ok: true, count: info.totalSubscribers || 0, mail: mailStatus });
     }
 
     return res.status(405).json({ ok: false });
